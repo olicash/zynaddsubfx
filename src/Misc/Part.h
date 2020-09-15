@@ -18,6 +18,7 @@
 
 #include "../globals.h"
 #include "../Params/Controller.h"
+#include "../MTS/libMTSClient.h"
 #include "../Containers/NotePool.h"
 
 #include <functional>
@@ -33,7 +34,7 @@ class Part
          * @param fft_ Pointer to the FFTwrapper*/
         Part(Allocator &alloc, const SYNTH_T &synth, const AbsTime &time,
              const int& gzip_compression, const int& interpolation,
-             Microtonal *microtonal_, FFTwrapper *fft_, WatchManager *wm=0, const char *prefix=0);
+             Microtonal *microtonal_, FFTwrapper *fft_, ::MTSClient *mtsc_=0, WatchManager *wm=0, const char *prefix=0);
         /**Destructor*/
         ~Part();
 
@@ -46,11 +47,7 @@ class Part
         bool getNoteLog2Freq(int masterkeyshift, float &note_log2_freq);
 
         //returns true when note is successfully applied
-        bool NoteOn(note_t note, uint8_t vel, int shift) REALTIME {
-            float log2_freq = note / 12.0f;
-            return (getNoteLog2Freq(shift, log2_freq) &&
-                NoteOnInternal(note, vel, log2_freq));
-        };
+        bool NoteOn(note_t note, uint8_t vel, int shift);
 
         //returns true when note is successfully applied
         bool NoteOn(note_t note, uint8_t vel, int shift,
@@ -215,6 +212,7 @@ class Part
         float oldfreq_log2;    //this is used for portamento
         Microtonal *microtonal;
         FFTwrapper *fft;
+        ::MTSClient *mtsc;
         WatchManager *wm;
         char prefix[64];
         Allocator  &memory;

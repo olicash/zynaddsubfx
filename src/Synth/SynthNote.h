@@ -15,6 +15,7 @@
 #include "../globals.h"
 #include "../Misc/Util.h"
 #include "../Containers/NotePool.h"
+#include "../MTS/libMTSClient.h"
 
 namespace zyn {
 
@@ -31,6 +32,7 @@ struct SynthParams
     float     note_log2_freq; //Floating point value of the note
     bool      quiet;     //Initial output condition for legato notes
     prng_t    seed;      //Random seed
+    note_t    note;
 };
 
 struct LegatoParams
@@ -45,7 +47,7 @@ struct LegatoParams
 class SynthNote
 {
     public:
-        SynthNote(const SynthParams &pars);
+        SynthNote(const SynthParams &pars, ::MTSClient *mtsc=0);
         virtual ~SynthNote() {}
 
         /**Compute Output Samples
@@ -127,6 +129,8 @@ class SynthNote
         const Controller &ctl;
         const SYNTH_T    &synth;
         const AbsTime    &time;
+        MTSClient        *mtsc;
+        char             note;
         WatchManager     *wm;
         smooth_float     filtercutoff_relfreq;
 };

@@ -27,8 +27,8 @@ namespace zyn {
 
 PADnote::PADnote(const PADnoteParameters *parameters,
                  const SynthParams &pars, const int& interpolation, WatchManager *wm,
-                 const char *prefix)
-    :SynthNote(pars),
+                 const char *prefix, ::MTSClient *mtsc_)
+    :SynthNote(pars, mtsc_),
     watch_int(wm, prefix, "noteout/after_interpolation"), watch_punch(wm, prefix, "noteout/after_punch"),
     watch_amp_int(wm, prefix, "noteout/after_amp_interpolation"), watch_legato(wm, prefix, "noteout/after_legato"),
      pars(*parameters),interpolation(interpolation)
@@ -273,6 +273,11 @@ void PADnote::computecurrentparameters()
             portamento = false;  //this note is no longer "portamented"
     }
 
+    if(mtsc) {
+        float new_log2_freq = log2f(MTS_NoteToFrequency(mtsc, (char)note));
+        if(new_log2_freq != note_log2_freq) setPitch(new_log2_freq);
+    }
+    
     realfreq =
         powf(2.0f, note_log2_freq + globalpitch / 12.0f + portamentofreqdelta_log2) *
         powf(ctl.pitchwheel.relfreq, BendAdjust) + OffsetHz;

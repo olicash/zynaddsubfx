@@ -16,6 +16,7 @@
 #define MASTER_H
 #include "../globals.h"
 #include "Microtonal.h"
+#include "../MTS/libMTSClient.h"
 #include <atomic>
 #include <rtosc/automations.h>
 #include <rtosc/savefile.h>
@@ -48,7 +49,7 @@ class Master
         Master(Master&& other) = delete;
 
         /** Constructor TODO make private*/
-        Master(const SYNTH_T &synth, class Config *config);
+        Master(const SYNTH_T &synth, class Config *config, ::MTSClient *mtsc=0);
         /** Destructor*/
         ~Master();
 
@@ -108,9 +109,7 @@ class Master
         void putalldata(const char *data);
 
         //Midi IN
-        void noteOn(char chan, note_t note, char velocity) {
-            noteOn(chan, note, velocity, note / 12.0f);
-        };
+        void noteOn(char chan, note_t note, char velocity);
         void noteOn(char chan, note_t note, char velocity, float note_log2_freq);
         void noteOff(char chan, note_t note);
         void polyphonicAftertouch(char chan, note_t note, char velocity);
@@ -186,6 +185,7 @@ class Master
 
         //other objects
         Microtonal microtonal;
+        ::MTSClient *mtsc;
 
         //Strictly Non-RT instrument bank object
         Bank bank;

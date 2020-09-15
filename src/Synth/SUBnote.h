@@ -23,8 +23,7 @@ namespace zyn {
 class SUBnote:public SynthNote
 {
     public:
-        SUBnote(const SUBnoteParameters *parameters, const SynthParams &pars,
-                WatchManager *wm = 0, const char *prefix = 0);
+        SUBnote(const SUBnoteParameters *parameters, const SynthParams &pars, WatchManager *wm = 0, const char *prefix = 0, ::MTSClient *mtsc = 0);
         ~SUBnote();
 
         SynthNote *cloneLegato(void);
@@ -36,11 +35,8 @@ class SUBnote:public SynthNote
         void entomb(void);
     private:
 
-        void setup(float velocity,
-                   int portamento_,
-		   float note_log2_freq,
-                   bool legato = false, WatchManager *wm = 0, const char *prefix = 0);
-	float setupFilters(float basefreq, int *pos, bool automation);
+        void setup(float velocity, int portamento_, float note_log2_freq, bool legato = false, WatchManager *wm = 0, const char *prefix = 0);
+        float setupFilters(float basefreq, int *pos, bool automation);
         void computecurrentparameters();
         /*
          * Initialize envelopes and global filter
@@ -52,12 +48,12 @@ class SUBnote:public SynthNote
         const SUBnoteParameters &pars;
         
         //parameters
-        bool       stereo;
+        bool      stereo;
         int       numstages; //number of stages of filters
         int       numharmonics; //number of harmonics (after the too higher hamonics are removed)
         int       firstnumharmonics; //To keep track of the first note's numharmonics value, useful in legato mode.
         int       start; //how the harmonics start
-	float     note_log2_freq;
+        float     note_log2_freq;
         float     BendAdjust;
         float     OffsetHz;
         float     panning;
@@ -101,7 +97,7 @@ class SUBnote:public SynthNote
         float overtone_rolloff[MAX_SUB_HARMONICS];
         float overtone_freq[MAX_SUB_HARMONICS];
 
-        int   oldpitchwheel, oldbandwidth;
+        int oldpitchwheel, oldbandwidth;
         float velocity;
         bool filterupdate;
 };

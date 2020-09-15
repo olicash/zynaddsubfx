@@ -431,8 +431,9 @@ class MiddleWareImpl
 public:
     MiddleWare *parent;
     Config* const config;
+    ::MTSClient *mtsc;
     MiddleWareImpl(MiddleWare *mw, SYNTH_T synth, Config* config,
-                   int preferred_port);
+                   int preferred_port, ::MTSClient *mtsc);
     ~MiddleWareImpl(void);
     void recreateMinimalMaster();
 
@@ -483,7 +484,7 @@ public:
                                    master->time,
                                    config->cfg.GzipCompression,
                                    config->cfg.Interpolation,
-                                   &master->microtonal, master->fft, &master->watcher,
+                                   &master->microtonal, master->fft, mtsc, &master->watcher,
                                    ("/part"+to_s(npart)+"/").c_str());
                 if(p->loadXMLinstrument(filename))
                     fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
@@ -507,7 +508,7 @@ public:
         Part *p = new Part(*master->memory, synth, master->time,
                 config->cfg.GzipCompression,
                 config->cfg.Interpolation,
-                &master->microtonal, master->fft);
+                &master->microtonal, master->fft, mtsc);
 
         if(p->loadXMLinstrument(filename))
             fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
@@ -538,7 +539,7 @@ public:
                 master->time,
                 config->cfg.GzipCompression,
                 config->cfg.Interpolation,
-                &master->microtonal, master->fft);
+                &master->microtonal, master->fft, mtsc);
         p->applyparameters();
         obj_store.extractPart(p, npart);
         kits.extractPart(p, npart);
@@ -553,7 +554,7 @@ public:
     //structures at once...
     int loadMaster(const char *filename, bool osc_format = false)
     {
-        Master *m = new Master(synth, config);
+        Master *m = new Master(synth, config, mtsc);
         m->uToB = uToB;
         m->bToU = bToU;
 
@@ -603,7 +604,7 @@ public:
             synth->buffersize = master->synth.buffersize;
             synth->samplerate = master->synth.samplerate;
             synth->alias();
-            zyn::Master master2(*synth, &config);
+            zyn::Master master2(*synth, &config, mtsc);
             master->copyMasterCbTo(&master2);
             master2.frozenState = true;
 
@@ -1617,8 +1618,8 @@ static rtosc::Ports middlewareReplyPorts = {
  ******************************************************************************/
 
 MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
-    Config* config, int preferrred_port)
-    :parent(mw), config(config), ui(nullptr), synth(std::move(synth_)),
+                               Config* config, int preferrred_port, ::MTSClient *mtsc_)
+    :parent(mw), config(config), mtsc(mtsc_), ui(nullptr), synth(std::move(synth_)),
     presetsstore(*config), autoSave(-1, [this]() {
             auto master = this->master;
             this->doReadOnlyOp([master](){
@@ -1697,7 +1698,7 @@ MiddleWareImpl::~MiddleWareImpl(void)
 
 void zyn::MiddleWareImpl::recreateMinimalMaster()
 {
-    master = new Master(synth, config);
+    master = new Master(synth, config, mtsc);
     master->bToU = bToU;
     master->uToB = uToB;
 }
@@ -2102,8 +2103,8 @@ void MiddleWareImpl::write(const char *path, const char *args, va_list va)
  *                         MidleWare Forwarding Stubs                         *
  ******************************************************************************/
 MiddleWare::MiddleWare(SYNTH_T synth, Config* config,
-                       int preferred_port)
-:impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port))
+                       int preferred_port, ::MTSClient *mtsc)
+:impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port, mtsc))
 {}
 
 MiddleWare::~MiddleWare(void)

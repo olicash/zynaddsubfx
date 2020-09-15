@@ -32,6 +32,7 @@
 #include <cstring>
 #include <cassert>
 #include <ctime>
+#include <cmath>
 
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
@@ -253,7 +254,7 @@ const Ports &Part::ports = partPorts;
 
 Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     const int &gzip_compression, const int &interpolation,
-    Microtonal *microtonal_, FFTwrapper *fft_, WatchManager *wm_, const char *prefix_)
+    Microtonal *microtonal_, FFTwrapper *fft_, ::MTSClient *mtsc_, WatchManager *wm_, const char *prefix_)
     :Pdrummode(false),
     Ppolymode(true),
     Plegatomode(false),
@@ -262,6 +263,7 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     ctl(synth_, &time_),
     microtonal(microtonal_),
     fft(fft_),
+    mtsc(mtsc_),
     wm(wm_),
     memory(alloc),
     synth(synth_),
@@ -551,21 +553,21 @@ bool Part::NoteOnInternal(note_t note,
             continue;
 
         SynthParams pars{memory, ctl, synth, time, vel,
-            portamento, note_log2_freq, false, prng()};
+            portamento, note_log2_freq, false, prng(), note};
         const int sendto = Pkitmode ? item.sendto() : 0;
 
         try {
             if(item.Padenabled)
                 notePool.insertNote(note, sendto,
                         {memory.alloc<ADnote>(kit[i].adpars, pars,
-                            wm, (pre+"kit"+i+"/adpars/").c_str), 0, i});
+                            wm, (pre+"kit"+i+"/adpars/").c_str, mtsc), 0, i});
             if(item.Psubenabled)
                 notePool.insertNote(note, sendto,
-                        {memory.alloc<SUBnote>(kit[i].subpars, pars, wm, (pre+"kit"+i+"/subpars/").c_str), 1, i});
+                        {memory.alloc<SUBnote>(kit[i].subpars, pars, wm, (pre+"kit"+i+"/subpars/").c_str, mtsc), 1, i});
             if(item.Ppadenabled)
                 notePool.insertNote(note, sendto,
                         {memory.alloc<PADnote>(kit[i].padpars, pars, interpolation, wm,
-                            (pre+"kit"+i+"/padpars/").c_str), 2, i});
+                            (pre+"kit"+i+"/padpars/").c_str, mtsc), 2, i});
         } catch (std::bad_alloc & ba) {
             std::cerr << "dropped new note: " << ba.what() << std::endl;
         }
@@ -816,6 +818,13 @@ bool Part::getNoteLog2Freq(int masterkeyshift, float &note_log2_freq)
     return microtonal->updatenotefreq_log2(note_log2_freq,
         (int)Pkeyshift - 64 + masterkeyshift);
 }
+    
+bool Part::NoteOn(note_t note, uint8_t vel, int shift) REALTIME {
+    static float f=log2f(440.0f) - 69.0f / 12.0f;
+    float log2_freq = mtsc ? log2f(MTS_NoteToFrequency(mtsc, (char)note)) - f : note / 12.0f;
+    return (getNoteLog2Freq(shift, log2_freq) &&
+            NoteOnInternal(note, vel, log2_freq));
+};
 
 float Part::getVelocity(uint8_t velocity, uint8_t velocity_sense,
         uint8_t velocity_offset) const

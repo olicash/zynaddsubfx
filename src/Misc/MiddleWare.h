@@ -15,6 +15,7 @@
 #include <string>
 
 class Fl_Osc_Interface;
+struct MTSClient;
 
 namespace zyn {
 
@@ -26,8 +27,7 @@ class PresetsStore;
 class MiddleWare
 {
     public:
-        MiddleWare(SYNTH_T synth, class Config *config,
-                   int preferred_port = -1);
+        MiddleWare(SYNTH_T synth, class Config *config, int preferred_port = -1, MTSClient *mtsc = 0);
         ~MiddleWare(void);
         void updateResources(Master *m);
         //returns internal master pointer

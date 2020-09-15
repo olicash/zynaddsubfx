@@ -26,6 +26,8 @@
 #include "extra/Thread.hpp"
 #include "extra/ScopedPointer.hpp"
 
+#include "../../MTS/libMTSClient.h"
+
 #include <lo/lo.h>
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -113,6 +115,7 @@ public:
           middleware(nullptr),
           defaultState(nullptr),
           oscPort(0),
+          mtsc(nullptr),
           middlewareThread(new MiddleWareThread())
     {
         synth.buffersize = static_cast<int>(getBufferSize());
@@ -122,6 +125,8 @@ public:
             synth.buffersize = 32;
 
         synth.alias();
+        
+        mtsc = MTS_RegisterClient();
 
         _initMaster();
 
@@ -135,6 +140,7 @@ public:
         middlewareThread->stop();
         _deleteMaster();
         std::free(defaultState);
+        MTS_DeregisterClient(mtsc);
     }
 
 protected:
@@ -495,6 +501,7 @@ private:
     Mutex mutex;
     char* defaultState;
     int   oscPort;
+    MTSClient *mtsc;
 
     ScopedPointer<MiddleWareThread> middlewareThread;
 
@@ -509,7 +516,7 @@ private:
 
     void _initMaster()
     {
-	middleware = new zyn::MiddleWare(std::move(synth), &config);
+	middleware = new zyn::MiddleWare(std::move(synth), &config, -1, mtsc);
         middleware->setUiCallback(__uiCallback, this);
         middleware->setIdleCallback(__idleCallback, this);
         _masterChangedCallback(middleware->spawnMaster());

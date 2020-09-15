@@ -37,8 +37,7 @@ class ADnote:public SynthNote
         /**Constructor.
          * @param pars Note Parameters
          * @param spars Synth Engine Agnostic Parameters*/
-        ADnote(ADnoteParameters *pars, const SynthParams &spars,
-                WatchManager *wm=0, const char *prefix=0);
+        ADnote(ADnoteParameters *pars, const SynthParams &spars, WatchManager *wm=0, const char *prefix=0, ::MTSClient *mtsc = 0);
         /**Destructor*/
         ~ADnote();
 
@@ -77,9 +76,9 @@ class ADnote:public SynthNote
         /**Deallocate Note resources and voice resources*/
         void KillNote();
         /**Get the Voice's base frequency*/
-        inline float getvoicebasefreq(int nvoice, float adjust_log2 = 0.0f) const;
+        inline float getvoicebasefreq(int nvoice, float adjust_log2 = 0.0f);
         /**Get modulator's base frequency*/
-        inline float getFMvoicebasefreq(int nvoice) const;
+        inline float getFMvoicebasefreq(int nvoice);
         /**Compute the Oscillator's samples.
          * Affects tmpwave_unison and updates oscposhi/oscposlo*/
         inline void ComputeVoiceOscillator_LinearInterpolation(int nvoice);

@@ -531,6 +531,7 @@ set(NONGUI_LIBRARIES
 	zynaddsubfx_params
 	zynaddsubfx_dsp
 	zynaddsubfx_nio
+	zynaddsubfx_MTS
 	)
 
 add_subdirectory(Misc)
@@ -540,6 +541,7 @@ add_subdirectory(Params)
 add_subdirectory(DSP)
 add_subdirectory(Nio)
 add_subdirectory(Plugin)
+add_subdirectory(MTS)
 
 add_library(zynaddsubfx_core STATIC
     version.cpp
@@ -553,6 +555,7 @@ add_library(zynaddsubfx_core STATIC
 	${zynaddsubfx_misc_SRCS}
 	${zynaddsubfx_params_SRCS}
 	${zynaddsubfx_synth_SRCS}
+	${zynaddsubfx_MTS_SRCS}
 	)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")

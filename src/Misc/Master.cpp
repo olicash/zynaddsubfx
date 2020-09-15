@@ -755,9 +755,9 @@ void Master::loadAutomation(XMLwrapper &xml, rtosc::AutomationMgr &midi)
     }
 }
 
-Master::Master(const SYNTH_T &synth_, Config* config)
+Master::Master(const SYNTH_T &synth_, Config* config, ::MTSClient *mtsc_)
     :HDDRecorder(synth_), time(synth_), ctl(synth_, &time),
-    microtonal(config->cfg.GzipCompression), bank(config),
+    microtonal(config->cfg.GzipCompression), mtsc(mtsc_), bank(config),
     automate(16,4,8),
     frozenState(false), pendingMemory(false),
     synth(synth_), gzip_compression(config->cfg.GzipCompression)
@@ -791,7 +791,7 @@ Master::Master(const SYNTH_T &synth_, Config* config)
     ScratchString ss;
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
         part[npart] = new Part(*memory, synth, time, config->cfg.GzipCompression,
-                               config->cfg.Interpolation, &microtonal, fft, &watcher,
+                               config->cfg.Interpolation, &microtonal, fft, mtsc, &watcher,
                                (ss+"/part"+npart+"/").c_str);
 
     //Insertion Effects init
@@ -940,21 +940,36 @@ void Master::defaults()
 /*
  * Note On Messages (velocity=0 for NoteOff)
  */
-void Master::noteOn(char chan, note_t note, char velocity, float note_log2_freq)
+    
+void Master::noteOn(char chan, note_t note, char velocity)
 {
-    if(velocity) {
-        for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
-            if(chan == part[npart]->Prcvchn) {
-                fakepeakpart[npart] = velocity * 2;
-                if(part[npart]->Penabled)
-                    part[npart]->NoteOn(note, velocity, keyshift, note_log2_freq);
-            }
+    if (mtsc) {
+        if (!MTS_ShouldFilterNote(mtsc, (char)note, chan)) {
+            static float f=log2f(440.0f) - 69.0f / 12.0f;
+            noteOn(chan, note, velocity, log2f(MTS_NoteToFrequency(mtsc, (char)note)) - f);
         }
-        activeNotes[note] = 1;
-        HDDRecorder.triggernow();
     }
     else
-        this->noteOff(chan, note);
+        noteOn(chan, note, velocity, note / 12.0f);
+};
+
+void Master::noteOn(char chan, note_t note, char velocity, float note_log2_freq)
+{
+    if (!mtsc || !MTS_ShouldFilterNote(mtsc, (char)note, chan)) {
+        if(velocity) {
+            for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) {
+                if(chan == part[npart]->Prcvchn) {
+                    fakepeakpart[npart] = velocity * 2;
+                    if(part[npart]->Penabled)
+                        part[npart]->NoteOn(note, velocity, keyshift, note_log2_freq);
+                }
+            }
+            activeNotes[note] = 1;
+            HDDRecorder.triggernow();
+        }
+        else
+            this->noteOff(chan, note);
+    }
 }
 
 /*

@@ -31,9 +31,8 @@
 #define LENGTHOF(x) ((int)(sizeof(x)/sizeof(x[0])))
 
 namespace zyn {
-ADnote::ADnote(ADnoteParameters *pars_, const SynthParams &spars,
-        WatchManager *wm, const char *prefix)
-    :SynthNote(spars), watch_be4_add(wm, prefix, "noteout/be4_mix"), watch_after_add(wm,prefix,"noteout/after_mix"),
+ADnote::ADnote(ADnoteParameters *pars_, const SynthParams &spars, WatchManager *wm, const char *prefix, ::MTSClient *mtsc_)
+    :SynthNote(spars, mtsc_), watch_be4_add(wm, prefix, "noteout/be4_mix"), watch_after_add(wm,prefix,"noteout/after_mix"),
     watch_punch(wm, prefix, "noteout/punch"), watch_legato(wm, prefix, "noteout/legato"), pars(*pars_)
 {
     memory.beginTransaction();
@@ -1035,13 +1034,18 @@ void ADnote::setfreqFM(int nvoice, float in_freq)
 /*
  * Get Voice base frequency
  */
-float ADnote::getvoicebasefreq(int nvoice, float adjust_log2) const
+float ADnote::getvoicebasefreq(int nvoice, float adjust_log2)
 {
     const float detune = NoteVoicePar[nvoice].Detune / 100.0f
                    + NoteVoicePar[nvoice].FineDetune / 100.0f
                    * ctl.bandwidth.relbw * bandwidthDetuneMultiplier
                    + NoteGlobalPar.Detune / 100.0f;
 
+    if(mtsc) {
+        float new_log2_freq = log2f(MTS_NoteToFrequency(mtsc, (char)note));
+        if(new_log2_freq != note_log2_freq) setPitch(new_log2_freq);
+    }
+    
     if(NoteVoicePar[nvoice].fixedfreq == 0) {
         return powf(2.0f, note_log2_freq + detune / 12.0f + adjust_log2);
     }
@@ -1064,7 +1068,7 @@ float ADnote::getvoicebasefreq(int nvoice, float adjust_log2) const
 /*
  * Get Voice's Modullator base frequency
  */
-float ADnote::getFMvoicebasefreq(int nvoice) const
+float ADnote::getFMvoicebasefreq(int nvoice)
 {
     return getvoicebasefreq(nvoice, NoteVoicePar[nvoice].FMDetune / 1200.0f);
 }

@@ -36,8 +36,8 @@
 namespace zyn {
 
 SUBnote::SUBnote(const SUBnoteParameters *parameters, const SynthParams &spars,
-    WatchManager *wm, const char *prefix) :
-    SynthNote(spars),
+    WatchManager *wm, const char *prefix, ::MTSClient *mtsc_) :
+    SynthNote(spars, mtsc_),
     watch_filter(wm, prefix, "noteout/filter"), watch_amp_int(wm,prefix,"noteout/amp_int"),
     watch_legato(wm, prefix, "noteout/legato"),
     pars(*parameters),
@@ -442,7 +442,12 @@ void SUBnote::computecurrentparameters()
             if(stereo)
                 rfilter = memory.valloc<bpfilter>(numstages * numharmonics);
         }
-
+        
+        if(mtsc) {
+            float new_log2_freq = log2f(MTS_NoteToFrequency(mtsc, (char)note));
+            if(new_log2_freq != note_log2_freq) setPitch(new_log2_freq);
+        }
+        
         const float basefreq = powf(2.0f, note_log2_freq);
         const float reduceamp = setupFilters(basefreq, pos, !delta_harmonics);
         volume = volume*oldreduceamp/reduceamp;

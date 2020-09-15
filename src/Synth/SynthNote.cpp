@@ -19,10 +19,10 @@
 
 namespace zyn {
 
-SynthNote::SynthNote(const SynthParams &pars)
+SynthNote::SynthNote(const SynthParams &pars, ::MTSClient *mtsc_)
     :memory(pars.memory),
-    legato(pars.synth, pars.velocity, pars.portamento,
-            pars.note_log2_freq, pars.quiet, pars.seed), ctl(pars.ctl), synth(pars.synth), time(pars.time)
+    legato(pars.synth, pars.velocity, pars.portamento, pars.note_log2_freq, pars.quiet, pars.seed),
+    ctl(pars.ctl), synth(pars.synth), time(pars.time), mtsc(mtsc_), note(pars.note)
 {}
 
 SynthNote::Legato::Legato(const SYNTH_T &synth_, float vel, int port,
